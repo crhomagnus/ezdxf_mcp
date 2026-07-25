@@ -14,7 +14,7 @@ dependencies = [
 
 [project.optional-dependencies]
 render = ["matplotlib>=3.9", "pymupdf>=1.24"]
-image = ["opencv-python-headless>=4.10,<5"]
+image = ["opencv-python-headless>=4.10,<6"]
 api = [
   "fastapi>=0.116,<1",
   "httpx>=0.28,<1",
