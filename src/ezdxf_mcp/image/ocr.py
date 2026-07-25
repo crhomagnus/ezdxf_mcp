@@ -94,7 +94,9 @@ def run_ocr(
         "tsv",
     ]
     try:
-        completed = subprocess.run(
+        # No shell is used; the language and numeric arguments are validated,
+        # and image paths are confined by the caller's workspace policy.
+        completed = subprocess.run(  # noqa: S603
             command,
             check=False,
             capture_output=True,

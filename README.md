@@ -65,7 +65,7 @@ credentials, private screenshots, and infrastructure are never published.
 | Validation | Observed result |
 |---|---:|
 | MCP/API tools registered | 117 |
-| Automated tests | 38 passed |
+| Automated tests | 53 passed |
 | Real display conversion | 1368 × 768 at numeric 1:1 scale |
 | Components recognized in that frame | 252 |
 | OCR text components | 123 |
@@ -269,6 +269,8 @@ installing them.
 - No caller-controlled server filesystem paths in API jobs.
 
 Report security issues privately as described in [SECURITY.md](SECURITY.md).
+The latest credential-exposure and runtime hardening results are in the
+[Security Audit](docs/SECURITY_AUDIT_2026-07-25.md).
 
 ## Development
 

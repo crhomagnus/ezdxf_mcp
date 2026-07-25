@@ -1,6 +1,6 @@
 # API and Cartesian Cursor Architecture
 
-Release: 3.2.1
+Release: 3.2.2
 
 ## Reference topology
 
@@ -40,7 +40,8 @@ Authorization: Bearer <api-token>
 ```
 
 Create independent API and cursor tokens, each at least 32 random characters,
-and store them in mode `0600` files outside the repository.
+and store them in mode `0600` regular files outside the repository. The path
+below is an example placeholder, not a real credential location:
 
 ```bash
 API_TOKEN_FILE=/secure/path/ezdxf-api-token

@@ -7,7 +7,6 @@ import hmac
 import json
 import os
 import re
-import stat
 import subprocess
 import time
 from collections import OrderedDict
@@ -16,6 +15,8 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
+
+from ..security import load_secret_file
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{8,100}$")
 
@@ -29,13 +30,7 @@ class CursorError(Exception):
 
 
 def load_token(path: Path) -> str:
-    file_stat = path.stat()
-    if stat.S_IMODE(file_stat.st_mode) & 0o077:
-        raise PermissionError(f"token file has unsafe permissions: {path}")
-    token = path.read_text(encoding="ascii").strip()
-    if len(token) < 32:
-        raise ValueError("cursor token is absent or too short")
-    return token
+    return load_secret_file(path)
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,7 +77,9 @@ class XDoToolBackend:
             "DISPLAY": self.settings.display,
             "XAUTHORITY": self.settings.xauthority,
         }
-        result = subprocess.run(
+        # The executable comes from root-controlled service configuration and
+        # every argument is generated from validated integers or fixed strings.
+        result = subprocess.run(  # noqa: S603
             [self.settings.xdotool, *arguments],
             check=True,
             capture_output=True,

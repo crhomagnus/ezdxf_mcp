@@ -324,7 +324,8 @@ def _map_image_word(entity: DXFEntity, word: OCRWord) -> tuple[list[list[float]]
         transform(left, top),
     ]
     box = _bbox_from_points(polygon, "exact_ocr_pixel_bbox_transformed_by_image_axes")
-    assert box is not None
+    if box is None:
+        raise ValueError("OCR word produced no spatial bounding box")
     return [_round_point(point) for point in polygon], box
 
 

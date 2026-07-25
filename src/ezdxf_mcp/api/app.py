@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import hmac
+import http.client
 import json
 import os
-import stat
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any, Literal
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.parse import SplitResult, urlsplit
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
@@ -23,18 +22,32 @@ from starlette.concurrency import run_in_threadpool
 from .. import __version__
 from ..image.targeting import select_component_target
 from ..image.vectorize import IMAGE_SUFFIXES, ImageVectorizationConfig
+from ..security import load_secret_file
 from .calibration import map_wcs_to_screen
 from .jobs import JobStore
 
 
 def _secure_token(path: Path) -> str:
-    file_stat = path.stat()
-    if stat.S_IMODE(file_stat.st_mode) & 0o077:
-        raise PermissionError(f"token file has unsafe permissions: {path}")
-    token = path.read_text(encoding="ascii").strip()
-    if len(token) < 32:
-        raise ValueError(f"token is absent or too short: {path}")
-    return token
+    return load_secret_file(path)
+
+
+def _loopback_http_url(raw_url: str) -> SplitResult:
+    try:
+        parsed = urlsplit(raw_url)
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError("cursor bridge URL is invalid") from error
+    if parsed.scheme != "http":
+        raise ValueError("cursor bridge URL must use plain HTTP inside the SSH tunnel")
+    if parsed.hostname not in {"127.0.0.1", "::1"}:
+        raise ValueError("cursor bridge URL must use a literal loopback address")
+    if port is None:
+        raise ValueError("cursor bridge URL must include an explicit port")
+    if parsed.username or parsed.password:
+        raise ValueError("cursor bridge URL must not contain credentials")
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        raise ValueError("cursor bridge URL must not contain a path, query, or fragment")
+    return parsed
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +60,13 @@ class ApiSettings:
     cursor_timeout: float = 5.0
     bind_host: str = "127.0.0.1"
     bind_port: int = 8766
+
+    def validate_security_boundary(self) -> None:
+        if self.bind_host not in {"127.0.0.1", "::1"}:
+            raise ValueError("API refuses a non-loopback bind")
+        if not 1 <= self.bind_port <= 65535:
+            raise ValueError("API port must be between 1 and 65535")
+        _loopback_http_url(self.cursor_url)
 
     @classmethod
     def from_env(cls) -> ApiSettings:
@@ -174,29 +194,46 @@ class CursorClient:
     """Fixed-destination client for the loopback-only cursor bridge."""
 
     def __init__(self, base_url: str, token_file: Path, timeout: float) -> None:
-        self.base_url = base_url
+        parsed = _loopback_http_url(base_url)
+        host = parsed.hostname
+        port = parsed.port
+        if host is None or port is None:
+            raise ValueError("cursor bridge URL is missing its host or port")
+        self.host = host
+        self.port = port
         self.token_file = token_file
         self.timeout = timeout
 
     def move(self, payload: dict[str, Any]) -> dict[str, Any]:
         token = _secure_token(self.token_file)
-        request = Request(
-            f"{self.base_url}/v1/cursor/move",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
+        body = json.dumps(payload).encode("utf-8")
+        connection = http.client.HTTPConnection(
+            self.host,
+            self.port,
+            timeout=self.timeout,
         )
         try:
-            with urlopen(request, timeout=self.timeout) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except HTTPError as error:
-            detail = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"cursor bridge HTTP {error.code}: {detail}") from error
-        except URLError as error:
-            raise RuntimeError(f"cursor bridge unavailable: {error.reason}") from error
+            connection.request(
+                "POST",
+                "/v1/cursor/move",
+                body=body,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                    "Content-Length": str(len(body)),
+                },
+            )
+            response = connection.getresponse()
+            response_body = response.read().decode("utf-8", errors="replace")
+            if not 200 <= response.status < 300:
+                raise RuntimeError(
+                    f"cursor bridge HTTP {response.status}: {response_body}"
+                )
+            return json.loads(response_body)
+        except OSError as error:
+            raise RuntimeError(f"cursor bridge unavailable: {error}") from error
+        finally:
+            connection.close()
 
 
 class RequestTooLarge(Exception):
@@ -266,6 +303,7 @@ def create_app(
     cursor_client: CursorClient | Any | None = None,
 ) -> FastAPI:
     configured = settings or ApiSettings.from_env()
+    configured.validate_security_boundary()
     api_token = _secure_token(configured.api_token_file)
     jobs = JobStore(configured.workspace / "jobs")
     cursor = cursor_client or CursorClient(
@@ -487,6 +525,7 @@ def main() -> None:
     import uvicorn
 
     settings = ApiSettings.from_env()
+    settings.validate_security_boundary()
     uvicorn.run(
         "ezdxf_mcp.api.app:create_app",
         factory=True,

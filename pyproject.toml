@@ -1,6 +1,6 @@
 [project]
 name = "ezdxf-mcp"
-version = "3.2.1"
+version = "3.2.2"
 description = "DXF MCP and API for image vectorization, spatial recognition, and cursor targeting"
 readme = "README.md"
 license = {text = "PolyForm-Noncommercial-1.0.0"}
@@ -53,6 +53,7 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "RUF"]
 ignore = ["E501"]
+external = ["S"]
 
 [tool.mypy]
 python_version = "3.12"

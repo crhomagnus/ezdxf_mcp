@@ -103,7 +103,7 @@ def _entity_references(session: DocumentSession) -> list[dict[str, Any]]:
         source = entity.dxf.get("handle")
         try:
             tags = TagCollector.dxftags(entity, doc.dxfversion)
-        except Exception:
+        except Exception:  # noqa: S112 - malformed entities are reported by the audit tools
             continue
         for tag in tags:
             semantics = reference_semantics(tag.code)

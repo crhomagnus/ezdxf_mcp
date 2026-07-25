@@ -2,7 +2,7 @@
 
 Date: 2026-07-25
 
-Release candidate: 3.2.1
+Release candidate: 3.2.2
 
 ## Conclusion
 
@@ -30,12 +30,19 @@ Observed release-candidate results:
 
 | Check | Result |
 |---|---|
-| Pytest | 38 passed |
+| Pytest | 53 passed |
 | Ruff | passed |
-| Mypy | passed for 38 source files |
+| Ruff security rules | passed |
+| Mypy | passed for 39 source files |
 | Wheel and source distribution | built successfully |
 | MCP tool catalog | 117 unique tools exercised |
 | Real MCP stdio transport | passed |
+| Gitleaks 8.30.1 | 0 findings in Git history and release contents |
+| TruffleHog 3.96.0 | 0 verified findings in Git history and release contents |
+| pip-audit 2.10.1 | 0 known vulnerabilities in 63 audited dependencies |
+| Production host and VM | release 3.2.2 active; dependency audits clean |
+| Authentication regression | missing credentials rejected with HTTP 401 |
+| Authenticated cursor check | dry run passed; no pointer movement |
 
 All committed test images and DXF fixtures are synthetic.
 
@@ -96,6 +103,14 @@ infrastructure data.
   operation.
 - Release content was scanned for common private-key, access-token, credential
   assignment, JWT, and credential-in-URL patterns before publication.
+- Git history and every extracted release artifact were independently scanned
+  with Gitleaks and TruffleHog.
+- High-confidence values from the private credential store were compared in
+  memory against public content; no exact match was found and no value was
+  written to an audit report.
+- Post-deployment process arguments, process environments, and service journals
+  were checked again without printing secret values; no token occurrence was
+  found.
 - Internal screenshots, DXF jobs, tokens, hostnames, IP addresses, and private
   operational records are excluded from the public release.
 

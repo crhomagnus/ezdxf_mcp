@@ -28,24 +28,40 @@ Never create token files inside the repository.
 
 ## Install the graphical host
 
-Set deployment-specific values explicitly:
+The values below are **documentation placeholders, not real infrastructure
+data**. `vm.example.com`, `203.0.113.10`, `desktop-user`, the fingerprint, and
+`/secure/path` must never be executed literally. Replace them locally with
+values obtained through trusted administrative channels:
 
 ```bash
 export EZDXF_VM_HOST=vm.example.com
 export EZDXF_VM_IP=203.0.113.10
+export EZDXF_VM_HOST_KEY_SHA256=SHA256:REPLACE_WITH_TRUSTED_FINGERPRINT
 export EZDXF_DESKTOP_USER=desktop-user
 export EZDXF_X11_DISPLAY=:0
 export EZDXF_XAUTHORITY=/run/user/1000/gdm/Xauthority
 
-sudo --preserve-env=EZDXF_VM_HOST,EZDXF_VM_IP,EZDXF_DESKTOP_USER,EZDXF_X11_DISPLAY,EZDXF_XAUTHORITY \
+sudo --preserve-env=EZDXF_VM_HOST,EZDXF_VM_IP,EZDXF_VM_HOST_KEY_SHA256,EZDXF_DESKTOP_USER,EZDXF_X11_DISPLAY,EZDXF_XAUTHORITY \
   ./deploy/install_host.sh \
-  dist/ezdxf_mcp-3.2.1-py3-none-any.whl \
+  dist/ezdxf_mcp-3.2.2-py3-none-any.whl \
   /secure/path/cursor.token
 ```
 
 The installer creates the restricted cursor service, a dedicated tunnel user,
 an Ed25519 key, a strict known-hosts file, and deployment-specific copies of
 the systemd/SSH templates.
+
+Obtain `EZDXF_VM_HOST_KEY_SHA256` through a trusted provider console or another
+authenticated channel. On the VM console, the Ed25519 fingerprint can be read
+with:
+
+```bash
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256
+```
+
+The installer rejects every scanned key that does not match this fingerprint.
+Do not derive the trusted fingerprint from an unauthenticated `ssh-keyscan`
+over the same network path.
 
 The public key is placed at:
 
@@ -63,7 +79,7 @@ key to a root-only staging directory on the VM. Then run:
 
 ```bash
 sudo ./deploy/install_vm.sh \
-  ezdxf_mcp-3.2.1-py3-none-any.whl \
+  ezdxf_mcp-3.2.2-py3-none-any.whl \
   api.token \
   cursor.token \
   id_ed25519.pub

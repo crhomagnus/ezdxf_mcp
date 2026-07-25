@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.2.2 — 2026-07-25
+
+- Hardened secret-file loading against symbolic links, hard links, ownership
+  mismatches, permission mistakes, file-swap races, oversized content, and
+  embedded whitespace.
+- Enforced literal loopback binding for the API and its internal cursor client.
+- Replaced generic URL opening with a fixed-destination HTTP client.
+- Required an independently trusted SSH host-key fingerprint during host
+  installation instead of trusting the first `ssh-keyscan` response.
+- Added security regression tests and repeated public-history, release,
+  dependency, runtime-permission, listener, and credential-exposure audits.
+- Enabled hosted secret, dependency, push, and private vulnerability-reporting
+  protections and validated the hardened release on both deployment roles.
+
 ## 3.2.1 — 2026-07-25
 
 - Prepared a clean public source release with no private infrastructure,

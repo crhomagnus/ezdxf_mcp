@@ -15,6 +15,7 @@ cursor_token=$(realpath "$2")
 source_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 vm_host=${EZDXF_VM_HOST:?set EZDXF_VM_HOST to the VM hostname}
 vm_ip=${EZDXF_VM_IP:?set EZDXF_VM_IP to the VM IP address}
+vm_host_key_sha256=${EZDXF_VM_HOST_KEY_SHA256:?set the trusted VM SSH host-key fingerprint}
 desktop_user=${EZDXF_DESKTOP_USER:-${SUDO_USER:-}}
 x11_display=${EZDXF_X11_DISPLAY:-:0}
 
@@ -66,19 +67,36 @@ if [[ ! -f /var/lib/ezdxf-tunnel/.ssh/id_ed25519 ]]; then
   runuser -u ezdxf-tunnel -- \
     ssh-keygen -q -t ed25519 -N "" -f /var/lib/ezdxf-tunnel/.ssh/id_ed25519
 fi
-ssh-keyscan -T 10 -H "$vm_host" \
-  > /var/lib/ezdxf-tunnel/.ssh/known_hosts.new 2>/dev/null
+host_key_scan=$(mktemp)
+verified_host_keys=$(mktemp)
+cursor_unit=$(mktemp)
+tunnel_unit=$(mktemp)
+ssh_config=$(mktemp)
+trap \
+  'rm -f "$host_key_scan" "$verified_host_keys" "$cursor_unit" "$tunnel_unit" "$ssh_config"' \
+  EXIT
+
+ssh-keyscan -T 10 -H "$vm_host" > "$host_key_scan" 2>/dev/null
+while IFS= read -r host_key; do
+  fingerprint=$(
+    printf '%s\n' "$host_key" |
+      ssh-keygen -lf - -E sha256 |
+      awk '{print $2}'
+  )
+  if [[ "$fingerprint" == "$vm_host_key_sha256" ]]; then
+    printf '%s\n' "$host_key" >> "$verified_host_keys"
+  fi
+done < "$host_key_scan"
+if [[ ! -s "$verified_host_keys" ]]; then
+  echo "VM SSH host-key fingerprint did not match the trusted value" >&2
+  exit 1
+fi
 install \
   -m 0600 \
   -o ezdxf-tunnel \
   -g ezdxf-tunnel \
-  /var/lib/ezdxf-tunnel/.ssh/known_hosts.new \
+  "$verified_host_keys" \
   /var/lib/ezdxf-tunnel/.ssh/known_hosts
-
-cursor_unit=$(mktemp)
-tunnel_unit=$(mktemp)
-ssh_config=$(mktemp)
-trap 'rm -f "$cursor_unit" "$tunnel_unit" "$ssh_config"' EXIT
 
 sed \
   -e "s|__EZDXF_DESKTOP_USER__|$desktop_user|g" \
