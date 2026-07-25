@@ -39,6 +39,11 @@ Observed release-candidate results:
 
 All committed test images and DXF fixtures are synthetic.
 
+The GitHub Actions workflow is configured, but its first hosted run was not
+started because GitHub reported an account-level billing lock. GitHub produced
+no test steps or logs. This is an external execution restriction, not a failed
+project test; the release gates above were run locally.
+
 ## Controlled real-screen evidence
 
 A 1368 × 768 browser frame was converted with a numeric 1:1 mapping:
