@@ -1,0 +1,54 @@
+[Unit]
+Description=ezdxf authenticated X11 cursor movement bridge
+After=graphical.target
+
+[Service]
+Type=simple
+User=__EZDXF_DESKTOP_USER__
+Group=__EZDXF_DESKTOP_GROUP__
+Environment=DISPLAY=__EZDXF_X11_DISPLAY__
+Environment=XAUTHORITY=__EZDXF_XAUTHORITY__
+Environment=EZDXF_CURSOR_HOST=127.0.0.1
+Environment=EZDXF_CURSOR_PORT=3472
+Environment=EZDXF_CURSOR_MIN_INTERVAL=0.25
+Environment=EZDXF_CURSOR_TOKEN_FILE=/etc/ezdxf-cursor-bridge/token
+ExecStartPre=/opt/ezdxf-cursor-bridge/venv/bin/ezdxf-cursor-bridge --check
+ExecStart=/opt/ezdxf-cursor-bridge/venv/bin/ezdxf-cursor-bridge
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=15
+TimeoutStopSec=10
+UMask=0077
+
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictNamespaces=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+InaccessiblePaths=-/dev/sda -/dev/sda1 -/dev/sda2 -/dev/sda5
+DevicePolicy=closed
+ProtectProc=invisible
+ProcSubset=pid
+RemoveIPC=true
+MemoryMax=256M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target

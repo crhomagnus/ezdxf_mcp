@@ -1,0 +1,54 @@
+[Unit]
+Description=Bidirectional loopback tunnel for ezdxf VM API and local cursor bridge
+After=network-online.target ezdxf-cursor-bridge.service
+Wants=network-online.target
+Requires=ezdxf-cursor-bridge.service
+
+[Service]
+Type=simple
+User=ezdxf-tunnel
+Group=ezdxf-tunnel
+ExecStart=/usr/bin/ssh -NT -F /etc/ezdxf-api-tunnel.conf ezdxf-vm
+Restart=always
+RestartSec=5
+TimeoutStartSec=20
+TimeoutStopSec=10
+UMask=0077
+
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=tmpfs
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+RestrictNamespaces=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+IPAddressAllow=203.0.113.10/32
+BindReadOnlyPaths=/var/lib/ezdxf-tunnel/.ssh
+InaccessiblePaths=-/dev/sda -/dev/sda1 -/dev/sda2 -/dev/sda5
+DevicePolicy=closed
+ProtectProc=invisible
+ProcSubset=pid
+RemoveIPC=true
+MemoryMax=128M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target

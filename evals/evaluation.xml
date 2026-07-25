@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evaluation suite="ezdxf_mcp_v3" version="3.0.0">
+  <question id="encoding" fixture="r2000.dxf,r2007.dxf">
+    <prompt>Qual é a codificação declarada e qual é a codificação real de saída em cada versão?</prompt>
+    <tools>dxf_open_document,dxf_inspect_encoding</tools>
+    <expected>R2000 declara ANSI_1252 e grava cp1252; R2007 também pode declarar ANSI_1252, mas grava UTF-8.</expected>
+  </question>
+  <question id="group-code-360">
+    <prompt>Qual é a semântica do código de grupo 360?</prompt>
+    <tools>dxf_explain_group_code</tools>
+    <expected>hard_owner; é traduzido em INSERT/XREF e protege o alvo contra purge.</expected>
+  </question>
+  <question id="trace-handle" fixture="custom_data.dxf">
+    <prompt>Rastreie o XRECORD CONFIG do LINE e classifique a referência recebida.</prompt>
+    <tools>dxf_open_document,dxf_get_extension_dict,dxf_trace_handle</tools>
+    <expected>O XRECORD existe e recebe do DICTIONARY uma referência de código 350, soft_owner.</expected>
+  </question>
+  <question id="dangling-handle" fixture="custom_data.dxf">
+    <prompt>Existe referência de handle pendurada?</prompt>
+    <tools>dxf_open_document,dxf_find_dangling_handles</tools>
+    <expected>Uma referência XDATA 1005 aponta para FFFF; tipo xdata_soft_pointer.</expected>
+  </question>
+  <question id="block-cycle" fixture="ciclo_blocos.dxf">
+    <prompt>O auditor encontra ciclo de referência entre blocos?</prompt>
+    <tools>dxf_open_document,dxf_audit</tools>
+    <expected>Sim; AuditError 104, INVALID_BLOCK_REFERENCE_CYCLE.</expected>
+  </question>
+  <question id="name-collision" fixture="nome_colidente.dxf">
+    <prompt>Há colisão case-insensitive em nomes de recursos?</prompt>
+    <tools>dxf_open_document,dxf_validate_structure</tools>
+    <expected>Sim; as layers Corte e CORTE colidem.</expected>
+  </question>
+  <question id="undefined-layer" fixture="camadas_ocultas.dxf">
+    <prompt>Qual camada é usada por entidade sem existir na tabela LAYER?</prompt>
+    <tools>dxf_open_document,dxf_list_layers</tools>
+    <expected>CORTE, com has_table_entry=false.</expected>
+  </question>
+  <question id="hidden-layers" fixture="camadas_ocultas.dxf">
+    <prompt>Quantas entidades existem e quantas permanecem visíveis respeitando o estado das layers?</prompt>
+    <tools>dxf_open_document,dxf_list_entities</tools>
+    <expected>Três no total e uma visível; AUXILIAR está off e RASCUNHO está frozen.</expected>
+  </question>
+  <question id="version-degradation" fixture="mesh.dxf">
+    <prompt>O documento pode ser convertido para R12 sem degradação?</prompt>
+    <tools>dxf_open_document,dxf_check_version_compat</tools>
+    <expected>Não; a análise inclui MESH como entidade posterior a AC1009 que exige conversão.</expected>
+  </question>
+  <question id="third-party-data" fixture="custom_data.dxf">
+    <prompt>Quais dados de terceiros estão embutidos?</prompt>
+    <tools>dxf_open_document,dxf_inventory_custom_data</tools>
+    <expected>Uma entidade usa XDATA THIRD_PARTY e possui um extension dictionary com o XRECORD CONFIG.</expected>
+  </question>
+</evaluation>

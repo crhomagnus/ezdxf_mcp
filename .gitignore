@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+coverage.xml
+.coverage
+htmlcov/
+dxf-workspace/*
+!dxf-workspace/.gitkeep
+tests/fixtures/generated/*
+!tests/fixtures/generated/.gitkeep

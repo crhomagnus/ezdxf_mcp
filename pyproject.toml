@@ -1,0 +1,63 @@
+[project]
+name = "ezdxf-mcp"
+version = "3.2.1"
+description = "DXF MCP and API for image vectorization, spatial recognition, and cursor targeting"
+readme = "README.md"
+license = {text = "PolyForm-Noncommercial-1.0.0"}
+requires-python = ">=3.10"
+authors = [{name = "Márcio Silva Moreira"}]
+dependencies = [
+  "ezdxf==1.4.4",
+  "mcp[cli]>=1.26,<2",
+  "pydantic>=2.9,<3",
+]
+
+[project.optional-dependencies]
+render = ["matplotlib>=3.9", "pymupdf>=1.24"]
+image = ["opencv-python-headless>=4.10,<5"]
+api = [
+  "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
+  "python-multipart>=0.0.20,<1",
+  "uvicorn>=0.35,<1",
+]
+dev = [
+  "build>=1.2",
+  "mypy>=1.13",
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.8",
+]
+all = ["ezdxf-mcp[render,image,api]"]
+
+[project.scripts]
+ezdxf-mcp = "ezdxf_mcp.server:main"
+ezdxf-api = "ezdxf_mcp.api.app:main"
+ezdxf-cursor-bridge = "ezdxf_mcp.cursor.bridge:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ezdxf_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+ignore_missing_imports = true
+follow_imports = "skip"
+warn_unused_ignores = true
+exclude = ["tests/fixtures"]
