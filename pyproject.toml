@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 authors = [{name = "Márcio Silva Moreira"}]
 dependencies = [
   "ezdxf==1.4.4",
-  "mcp[cli]>=1.26,<2",
+  "mcp[cli]>=1.26,<3",
   "pydantic>=2.9,<3",
 ]
 
